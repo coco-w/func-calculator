@@ -1,8 +1,8 @@
-import React, { useEffect, useState, forwardRef, useImperativeHandle, FC, useRef } from 'react'
+import React, { useState, forwardRef, useImperativeHandle, useRef } from 'react'
 import BraftEditor, { ControlType } from 'braft-editor'
 import { ContentUtils } from 'braft-utils'
 import 'braft-editor/dist/index.css'
-import { Modal, Button, Select, Row, message } from 'antd'
+import { Modal, Select, message } from 'antd'
 import { AlgorithModal, funItem } from '../../page/home/type'
 import { getBaseIndex, getFunction } from '../../api/index'
 import { IBaseIndex, IFunction } from './type'
@@ -10,8 +10,7 @@ import './index.less'
 import { SelectValue } from 'antd/lib/select'
 import { traversalDFSDOM } from '@/utils'
 
-
-const EditCalc =  forwardRef((props: any, ref: any) => {
+const EditCalc = forwardRef((props: any, ref: any) => {
   const instance = useRef<any>(null)
   const [showModel, setShowModel] = useState<boolean>(false)
   const [editorState, setEditorState] = useState<any>(BraftEditor.createEditorState(null))
@@ -28,7 +27,7 @@ const EditCalc =  forwardRef((props: any, ref: any) => {
       key: 'if',
       text: <b>if</b>,
       type: 'button',
-      onClick: () => {
+      onClick: (): void => {
         setEditorState(ContentUtils.insertHTML(editorState, '<span data-foo="keyword" class="keyword">if</span>'))
       }
     },
@@ -36,7 +35,7 @@ const EditCalc =  forwardRef((props: any, ref: any) => {
       key: 'else',
       type: 'button',
       text: <b>else</b>,
-      onClick: () => {
+      onClick: (): void => {
         setEditorState(ContentUtils.insertHTML(editorState, '<span data-foo="keyword" class="keyword">else</span>'))
       }
     },
@@ -44,7 +43,7 @@ const EditCalc =  forwardRef((props: any, ref: any) => {
       key: 'return',
       type: 'button',
       text: <b>return</b>,
-      onClick: () => {
+      onClick: (): void => {
         setEditorState(ContentUtils.insertHTML(editorState, '<span data-foo="keyword" class="keyword">return</span>'))
       }
     },
@@ -52,7 +51,7 @@ const EditCalc =  forwardRef((props: any, ref: any) => {
       key: 'bracket',
       type: 'button',
       text: <b>&#123; &#125;</b>,
-      onClick: (val: any, val2: any) => {
+      onClick: (): void => {
         setEditorState(ContentUtils.insertHTML(editorState, '{}'))
       }
     },
@@ -60,7 +59,7 @@ const EditCalc =  forwardRef((props: any, ref: any) => {
       key: 'more',
       type: 'button',
       text: '基础指标',
-      onClick: () => {
+      onClick: (): void => {
         setBaseIndexVisible(true)
       }
     },
@@ -68,7 +67,7 @@ const EditCalc =  forwardRef((props: any, ref: any) => {
       key: 'func',
       type: 'button',
       text: '函数',
-      onClick: () => {
+      onClick: (): void => {
         setFunctionVisible(true)
       }
     },
@@ -76,7 +75,7 @@ const EditCalc =  forwardRef((props: any, ref: any) => {
       key: 'preview',
       type: 'button',
       text: '公式描述',
-      onClick: () => {
+      onClick: (): void => {
         const html: string = editorState.toHTML()
         const div: HTMLElement = document.createElement('div')
         div.innerHTML = html
@@ -95,7 +94,7 @@ const EditCalc =  forwardRef((props: any, ref: any) => {
     // 指定entity的mutability属性，可选值为MUTABLE和IMMUTABLE，表明该entity是否可编辑，默认为MUTABLE
     mutability: 'IMMUTABLE',
     // 指定entity在编辑器中的渲染组件
-    component: (props: any) => {
+    component: (props: any): JSX.Element => {
       // 通过entityKey获取entity实例，关于entity实例请参考https://github.com/facebook/draft-js/blob/master/src/model/entity/DraftEntityInstance.js
       const entity = props.contentState.getEntity(props.entityKey)
       console.log(props)
@@ -113,7 +112,7 @@ const EditCalc =  forwardRef((props: any, ref: any) => {
       
     },
     // 指定html转换为editorState时，何种规则的内容将会转换成该entity
-    importer: (nodeName: any, node: any, source: any) => {
+    importer: (nodeName: any, node: any, source: any): {mutability: string; data?: object}|void => {
       // source属性表明输入来源，可能值为create、paste或undefined
       // console.log(node)
       if (nodeName.toLowerCase() === 'span' && node.classList && node.classList.contains('keyword')) {
@@ -141,7 +140,7 @@ const EditCalc =  forwardRef((props: any, ref: any) => {
       }
     },
     // 指定输出该entnty在输出的html中的呈现方式
-    exporter: (entityObject: any, originalText: any) => {
+    exporter: (entityObject: any, originalText: any): JSX.Element => {
       // 注意此处的entityObject并不是一个entity实例，而是一个包含type、mutability和data属性的对象
       const { foo } = entityObject.data
       console.log(entityObject, originalText, 'exporter')

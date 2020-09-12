@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Table, Button, Row, Form, Select, Input, Col, message, Popconfirm } from 'antd'
+import { Table, Button, Row, Form, Select, Input, message } from 'antd'
 import { getCalcFunc, getMajorClass, getSubclass, calcFuncSubmit, deleteCalcFunc } from '../../api'
-import { funItem, AlgorithModal, MajorClass, SubClass, CalcBaseMsg, IBaseModal } from './type'
+import { funItem, AlgorithModal, MajorClass, SubClass, IBaseModal } from './type'
 import './index.less'
 import { ColumnProps, TablePaginationConfig } from 'antd/lib/table'
 import { Store } from 'antd/lib/form/interface'
@@ -9,7 +9,7 @@ import EidtCalc from '../../components/editCalc'
 import BaseModal from '../../components/baseModal'
 import Modal from 'antd/lib/modal/Modal'
 
-const Home: React.FC<any> = (props: any) => {
+const Home: React.FC<any> = () => {
   const algorithModal = useRef<AlgorithModal>(null)
   const baseModal = useRef<IBaseModal>(null)
   const [queryParams, setQueryParams] = useState<funItem>({})
@@ -24,16 +24,14 @@ const Home: React.FC<any> = (props: any) => {
     total: 0,
   })
   const [dataSource, setDataSource] =  useState<Array<funItem>>([])
-  const [showEditCalcFunc, setShowEditCalcFunc] = useState<boolean>(false)
+  // const [showEditCalcFunc, setShowEditCalcFunc] = useState<boolean>(false)
   const [editData, setEditData] = useState<funItem | null>(null)
   const [baseModalTitle, setBaseModalTitle] = useState<'新增' | '编辑' | ''>('')
   const [baseForm, setBaseForm] = useState<funItem | undefined | null>(undefined)
   const [baseModalType, setBaseModalType] = useState<'add'|'update'>('add')
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false)
   const [tableLoading, setTableLoading] = useState<boolean>(false)
-  
   const [form] = Form.useForm()
-  
   /**
    * 加载table数据
    */
@@ -46,14 +44,14 @@ const Home: React.FC<any> = (props: any) => {
       })
       setDataSource(res.result.records)
       setTableLoading(false)
-    }).catch(err => {
+    }).catch(() => {
       setTableLoading(false)
     })
   }
   
-  const handleChangeAlgorith = (item: funItem) => {
+  const handleChangeAlgorith = (item: funItem): void => {
     if (algorithModal.current) {
-      setEditData((oid: funItem | null) => {
+      setEditData(() => {
         if (algorithModal.current) {
           algorithModal.current.open(item)
         }
@@ -62,7 +60,7 @@ const Home: React.FC<any> = (props: any) => {
       
     }
   }
-  const handleUpdateCalcBase = (item: funItem) => {
+  const handleUpdateCalcBase = (item: funItem): void => {
     if (baseModal.current) {
       setBaseForm(item)
       setBaseModalType('update')
@@ -70,21 +68,21 @@ const Home: React.FC<any> = (props: any) => {
       baseModal.current.open()
     }
   }
-  const hadnleDeleteItem = () => {
+  const hadnleDeleteItem = (): void => {
     setConfirmLoading(true)
-    deleteCalcFunc(deleteCode).then(res => {
+    deleteCalcFunc(deleteCode).then(() => {
       message.success('删除成功')
       console.log(queryParams)
       onLoad(pages, queryParams)
       setConfirmLoading(false)
       setDeleteVisible(false)
-    }).catch(err => {
+    }).catch(() => {
       setConfirmLoading(false)
     })
   }
   
   
-  const [columns, setColumns] = useState<Array<ColumnProps<funItem>>>([
+  const [columns] = useState<Array<ColumnProps<funItem>>>([
     {
       title: '序号',
       render: function render(value: any, record: funItem, index: number): React.ReactElement {
@@ -118,11 +116,11 @@ const Home: React.FC<any> = (props: any) => {
     },
     {
       title: '操作',
-      render: function render(value: any, record: funItem, index: number): React.ReactElement {
+      render: function render(value: any, record: funItem): React.ReactElement {
         return (
           <div className="btn-wrapper" style={{padding: 0}}>
             <Button type="primary" onClick={handleUpdateCalcBase.bind(this, record)}>修改</Button>
-            <Button type="primary" danger onClick={() => {
+            <Button type="primary" danger onClick={(): void => {
                 setDeleteVisible(true)
                 if (record.indexCode) {
                   setDeleteCode(record.indexCode)
@@ -186,29 +184,29 @@ const Home: React.FC<any> = (props: any) => {
   }
   const handleBaseModalSubmit = (value: any): void => {
     if (baseModalType === 'add') {
-      calcFuncSubmit(value).then(res => {
+      calcFuncSubmit(value).then(() => {
         message.success('提交成功')
         baseModal.current?.restForm()
         baseModal.current?.close()
         onLoad(pages, queryParams)
-      }).catch((err: any) => {
+      }).catch(() => {
         // baseModal.current?.close()
       })
     } else if (baseModalType === 'update') {
       calcFuncSubmit({
         ...baseForm,
         ...value
-      }).then(res => {
+      }).then(() => {
         message.success('提交成功')
         baseModal.current?.restForm()
         baseModal.current?.close()
         onLoad(pages, queryParams)
-      }).catch((err: any) => {
+      }).catch(() => {
         // baseModal.current?.close()
       })
     }
   }
-  const eidtCalcSubmit = (text: string, html: string) => {
+  const eidtCalcSubmit = (text: string, html: string): void => {
     calcFuncSubmit({
       ...editData,
       calculateExp: text,
@@ -268,12 +266,12 @@ const Home: React.FC<any> = (props: any) => {
         bordered={true}
         loading={tableLoading}
       />
-      <EidtCalc visible={showEditCalcFunc} ref={algorithModal} data={editData} submit={eidtCalcSubmit}/>
+      <EidtCalc ref={algorithModal} data={editData} submit={eidtCalcSubmit}/>
       <BaseModal ref={baseModal} title={baseModalTitle} data={baseForm} majorClass={majorClass} subClass={subClass} submit={handleBaseModalSubmit} type={baseModalType}></BaseModal>
       <Modal
         title="删除"
         visible={deleteVisible}
-        onCancel={() => {setDeleteVisible(false)}}
+        onCancel={(): void => {setDeleteVisible(false)}}
         onOk={hadnleDeleteItem}
         okText="确认"
         cancelText="取消"

@@ -1,26 +1,25 @@
 import React, {forwardRef, useState, useImperativeHandle, useEffect} from 'react'
-import { Modal, Button, Form, Select, Input, Row, Col } from 'antd'
+import { Modal, Form, Select, Input, Row, Col } from 'antd'
 import './index.less'
 import { MajorClass, SubClass } from '@page/home/type'
 import { BaseModalProps } from './type'
-import { useForm } from 'antd/lib/form/Form'
 
 const BaseModal = forwardRef((props: BaseModalProps, ref: any) => {
   const [visible, setVisible] = useState<boolean>(false)
   const [activeSubClass, setActiveSubClass] = useState<Array<SubClass>>([])
   const [form] = Form.useForm()
   useImperativeHandle(ref, () => ({
-    open: () => {
+    open: (): void => {
       setVisible(true)
     },
-    close: () => {
+    close: (): void => {
       setVisible(false)
     },
-    restForm: () => {
+    restForm: (): void => {
       form.resetFields()
     }
   }))
-  const handleMajorChange = (value: any) => {
+  const handleMajorChange = (value: any): void => {
     const arr: Array<SubClass> = []
     props.subClass.forEach((ele: SubClass) => {
       if (ele.eaProjectpoid === value) {
@@ -30,22 +29,20 @@ const BaseModal = forwardRef((props: BaseModalProps, ref: any) => {
     setActiveSubClass(arr)
     form.resetFields(['eaProjectsOid'])
   }
-  useEffect(() => {
+  useEffect((): void => {
     if (props.data) {
       const majorId: string|undefined = props.subClass.find((ele: SubClass) => ele.oid === props.data?.eaProjectsOid)?.eaProjectpoid
       handleMajorChange(majorId)
       form.setFieldsValue({
         ...props.data,
         major: majorId,
-      })
-      
+      }) 
     }
-    
   }, [props.data])
-  const handleCancel = () => {
+  const handleCancel = (): void => {
     setVisible(false)
   }
-  const handleOk = () => {
+  const handleOk = (): void => {
     form.validateFields().then((value: any) => {
       props.submit(value)
     })

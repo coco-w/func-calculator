@@ -1,7 +1,7 @@
 module.exports = {
     "env": {
         "browser": true,
-        "es2021": true,
+        // "es2020": true,
         "es6": true
     },
     "extends": [
@@ -22,7 +22,8 @@ module.exports = {
         "@typescript-eslint"
     ],
     "rules": {
-      "react/display-name": 1,
+      "react/display-name": 0,
       "no-debugger": 0,
+      '@typescript-eslint/no-explicit-any': 0,
     }
 };
