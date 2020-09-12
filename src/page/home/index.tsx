@@ -53,7 +53,13 @@ const Home: React.FC<any> = (props: any) => {
   
   const handleChangeAlgorith = (item: funItem) => {
     if (algorithModal.current) {
-      setEditData(item)
+      setEditData((oid: funItem | null) => {
+        if (algorithModal.current) {
+          algorithModal.current.open(item)
+        }
+        return item
+      })
+      
     }
   }
   const handleUpdateCalcBase = (item: funItem) => {
@@ -139,11 +145,11 @@ const Home: React.FC<any> = (props: any) => {
       setSubClass(res.result.eaProjectsEntityList)
     })
   }, [])
-  useEffect(() => {
-    if (algorithModal.current && editData) {
-      algorithModal.current.open()
-    }
-  }, [editData])
+  // useEffect(() => {
+  //   if (algorithModal.current && editData) {
+      
+  //   }
+  // }, [editData])
   // useEffect(() => {
   //   if (baseModal.current && baseForm) {
       
@@ -202,6 +208,13 @@ const Home: React.FC<any> = (props: any) => {
       })
     }
   }
+  const eidtCalcSubmit = (text: string, html: string) => {
+    calcFuncSubmit({
+      ...editData,
+      calculateExp: text,
+      htmlText: html
+    })
+  }
   return (
     <div className="home">
       <Form layout="inline" form={form}>
@@ -255,7 +268,7 @@ const Home: React.FC<any> = (props: any) => {
         bordered={true}
         loading={tableLoading}
       />
-      <EidtCalc visible={showEditCalcFunc} ref={algorithModal} data={editData}/>
+      <EidtCalc visible={showEditCalcFunc} ref={algorithModal} data={editData} submit={eidtCalcSubmit}/>
       <BaseModal ref={baseModal} title={baseModalTitle} data={baseForm} majorClass={majorClass} subClass={subClass} submit={handleBaseModalSubmit} type={baseModalType}></BaseModal>
       <Modal
         title="删除"

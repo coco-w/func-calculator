@@ -1,6 +1,7 @@
 import { TablePaginationConfig } from "antd/lib/table"
 
 export interface funItem {
+  htmlText?: string;
   calculateExp?: string //计算公式
   calculateOrder?: number //计算顺序
   displayExp?: string //显示公式(包含注释)
@@ -29,7 +30,7 @@ export interface ColumnItem {
  * @method open 打开modal
  */
 export interface AlgorithModal {
-  open: () => void
+  open: (data: funItem) => void
 }
 /**
  * 基础信息modal

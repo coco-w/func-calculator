@@ -83,3 +83,21 @@ export const deleteCalcFunc = (indexCode: string): AxiosPromise => {
     }
   })
 }
+/**
+ * 获取所有基础指标
+ */
+export const getBaseIndex = (): AxiosPromise => {
+  return instance.get('api/eanew/eaProjectPoint/detail')
+}
+
+/**
+ * 查询函数
+ * @param id 指标类型
+ */
+export const getFunction = (id?: string): AxiosPromise => {
+  return instance.get('api/eanew/eaProjectPoint/selectFunction', {
+    params: {
+      eaProjectsOid: id
+    }
+  })
+}
