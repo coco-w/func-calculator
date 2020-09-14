@@ -2,13 +2,13 @@ import React, { useState, forwardRef, useImperativeHandle, useRef } from 'react'
 import BraftEditor, { ControlType } from 'braft-editor'
 import { ContentUtils } from 'braft-utils'
 import 'braft-editor/dist/index.css'
-import { Modal, Select, message } from 'antd'
+import { Modal, Select, message, Row, Col, Input } from 'antd'
 import { AlgorithModal, funItem } from '../../page/home/type'
 import { getBaseIndex, getFunction } from '../../api/index'
 import { IBaseIndex, IFunction } from './type'
 import './index.less'
 import { SelectValue } from 'antd/lib/select'
-import { traversalDFSDOM } from '@/utils'
+import { traversalDFSDOM, debounce } from '@/utils'
 
 const EditCalc = forwardRef((props: any, ref: any) => {
   const instance = useRef<any>(null)
@@ -21,7 +21,10 @@ const EditCalc = forwardRef((props: any, ref: any) => {
   const [functionVisible, setFunctionVisible] = useState<boolean>(false)
   const [functionValue, setFunctionValue] = useState<SelectValue>('')
   const [previewVisible, setPreviewVisible] = useState<boolean>(false)
-  const [previewHTML, setPreviewHTML] = useState<HTMLElement>(document.createElement('div'))
+  const [previewHTML, setPreviewHTML] = useState<string>('')
+  const [timer, setTimer] = useState<any>(null)
+  const [searchBaseIndexValue, setSearchBaseIndexValue] = useState<string>('')
+  const [searchFunctionValue, setSearchFunctionValue] = useState<string>('')
   const controls: ControlType|Array<any> = [
     {
       key: 'if',
@@ -70,19 +73,6 @@ const EditCalc = forwardRef((props: any, ref: any) => {
       onClick: (): void => {
         setFunctionVisible(true)
       }
-    },
-    {
-      key: 'preview',
-      type: 'button',
-      text: '公式描述',
-      onClick: (): void => {
-        const html: string = editorState.toHTML()
-        const div: HTMLElement = document.createElement('div')
-        div.innerHTML = html
-        setPreviewHTML(div)
-        setPreviewVisible(true)
-        // console.log()
-      }
     }
   ]
   
@@ -97,7 +87,6 @@ const EditCalc = forwardRef((props: any, ref: any) => {
     component: (props: any): JSX.Element => {
       // 通过entityKey获取entity实例，关于entity实例请参考https://github.com/facebook/draft-js/blob/master/src/model/entity/DraftEntityInstance.js
       const entity = props.contentState.getEntity(props.entityKey)
-      console.log(props)
       // 通过entity.getData()获取该entity的附加数据
       const { foo } = entity.getData()
       if (foo === 'keyword') {
@@ -143,7 +132,6 @@ const EditCalc = forwardRef((props: any, ref: any) => {
     exporter: (entityObject: any, originalText: any): JSX.Element => {
       // 注意此处的entityObject并不是一个entity实例，而是一个包含type、mutability和data属性的对象
       const { foo } = entityObject.data
-      console.log(entityObject, originalText, 'exporter')
       if (foo === 'keyword') {
         return <span data-foo={foo} className="keyword">{originalText}</span>
       }else if (foo === 'value') {
@@ -173,29 +161,55 @@ const EditCalc = forwardRef((props: any, ref: any) => {
   
   
   // 加载扩展模块
-  BraftEditor.use(entityExtension)  
+  BraftEditor.use(entityExtension)
+  const transtionPreview: (a: any) => void = (editorState: any) => {
+    console.log('preview')
+    const html: string = editorState.toHTML()
+    const div: HTMLElement = document.createElement('div')
+    div.innerHTML = html
+    const previewDOM: HTMLElement|Element = traversalDFSDOM(div, (ele: HTMLElement) => {
+      if(ele.className === 'value') {
+        const value: string|undefined =  baseIndexData.find((item: IBaseIndex) => item.pointCode === ele.innerText)?.pointName
+      if (value) {
+        ele.innerText = value
+      }
+      }else if (ele.className === 'function'){
+        const value: string|undefined =  functionArr.find((item: IFunction) => item.functionCode === ele.innerText)?.functionName
+        if (value) {
+          ele.innerText = value
+        }
+      }
+    })
+    
+    setPreviewHTML(previewDOM.innerHTML)
+  }
   useImperativeHandle(ref, (): AlgorithModal => ({
     open:async (data: funItem) => {
       setShowModel(true)
-      Promise.all([getBaseIndex(), getFunction(data.eaProjectsOid)]).then((res: any) => {
-        setBaseIndexData(res[0].result)
-        setFunctionArr(res[1].result)
-      }).catch((err: any) => {
-        message.error('加载数据失败')
-      })
-      if (data.htmlText) {
-        setEditorState(BraftEditor.createEditorState(data.htmlText))
-      }else {
+      getBaseIndex().then((res: any) => {
+        setBaseIndexData(res.result.slice(0, 20))
+        setTimeout(() => {
+          setBaseIndexData(res.result)  
+        }, 2000);
         
-        setEditorState(BraftEditor.createEditorState(data.calculateExp))
-      }
+      })
+      getFunction(data.eaProjectsOid).then((res: any) => {
+        setFunctionArr(res.result)
+      })
+      setEditorState((old: any) => {
+        let r: any = null
+        if (data.htmlText) {
+          r = BraftEditor.createEditorState(data.htmlText)
+        }else {
+          r = BraftEditor.createEditorState(data.calculateExp)
+        }
+        setTimeout(() => {
+          transtionPreview(r)
+        }, 10)
+        return r
+      })
     }
   }))
-  // useEffect(()=> {
-    
-    
-    
-  // }, [])
   const handleOk = () => {
     setShowModel(false)
     const text: string = editorState.toText()
@@ -210,9 +224,22 @@ const EditCalc = forwardRef((props: any, ref: any) => {
       props.close()
     }
   }
+  
   const handleChange = (editorState: any) => {
-    console.log(instance.current.getValue())
+    // console.log(instance.current.getValue())
     setEditorState(editorState)
+    setTimer((old: any) => {
+      if (old) {
+        clearTimeout(old)
+      }else {
+        const t: any = setTimeout(() => {
+          console.log('111')
+          transtionPreview(editorState)
+        }, 500)
+        return t
+      }
+    })
+    
   }
   const handleBaseIndexModalOk = () => {
     const baseindex: IBaseIndex | undefined = baseIndexData.find((ele: IBaseIndex) => ele.pointName === baseIndexValue)
@@ -236,6 +263,25 @@ const EditCalc = forwardRef((props: any, ref: any) => {
     setFunctionVisible(false)
     setFunctionValue('')
   }
+
+  const handleFunctionItemClick = (item: IFunction) => {
+    setEditorState(ContentUtils.insertHTML(editorState, `<span data-foo="function" class="function">${item.functionCode}</span>`))
+    setTimeout(() => {
+      instance.current.forceRender()  
+    }, 10)
+    setFunctionVisible(false)
+    setFunctionValue('')
+  }
+  const handleBaseIndexItemClick = ((item: IBaseIndex) => {
+    setEditorState(ContentUtils.insertHTML(editorState, `<span data-foo="value" class="value">${item.pointCode}</span>`))
+    setTimeout(() => {
+      instance.current.forceRender()  
+    }, 10)
+    setBaseIndexVisible(false)
+    setBaseIndexValue('')
+  })
+ 
+  const width = '100%'
   return (
     <div>
       <Modal
@@ -246,12 +292,146 @@ const EditCalc = forwardRef((props: any, ref: any) => {
         onCancel={handleCancel}
         width="100%"
       >
-        <BraftEditor
-          ref={instance}
-          value={editorState}
-          controls={controls}
-          onChange={handleChange}
-        />
+        <Row gutter={12}>
+          <Col span={12}>
+            <div className="editor">
+              <BraftEditor
+                ref={instance}
+                value={editorState}
+                controls={controls}
+                onChange={handleChange}
+              />
+            </div>
+          </Col>
+          <Col span={12}>
+            <div className="preview">
+              <div className="bf-controlbar">
+                <button className="control-item button" >
+                  <b>公式描述</b>
+                </button>
+              </div>
+              <div dangerouslySetInnerHTML={{__html: previewHTML}} style={{padding: 15}}></div>
+            </div>
+          </Col>
+        </Row>
+        <Row gutter={12}>
+          <Col span={12}>
+            <div className="base">
+            <div className="bf-controlbar">
+                <button className="control-item button" >
+                  <b>基础指数</b>
+                </button>
+                <Input 
+                  value={searchBaseIndexValue}
+                  // onChange={(e: any) => setSearchBaseIndexValue(e.target)}
+                  onChange={e => setSearchBaseIndexValue(e.target.value)}
+                  placeholder="名称或者编号"
+                />
+              </div>
+              <div className="base-index-wrapper">
+              {
+                baseIndexData.map((item: IBaseIndex, index: number) => {
+                  if (searchBaseIndexValue.trim().length > 0) {
+                    if ((item.pointCode.indexOf(searchBaseIndexValue) > -1 || item.pointName.indexOf(searchBaseIndexValue) > -1)) {
+                      return (
+                        <div 
+                          className="item"
+                          onClick={() => handleBaseIndexItemClick(item)}
+                          key={index}
+                        >
+                          <h4 className="ant-list-item-meta-title">{item.pointName}</h4>
+                          <div className="ant-list-item-meta-description">{item.pointCode}</div>
+                        </div>
+                      )
+                    }
+                  } else {
+                    return (
+                      <div 
+                        className="item"
+                        onClick={() => handleBaseIndexItemClick(item)}
+                        key={index}
+                      >
+                        <h4 className="ant-list-item-meta-title">{item.pointName}</h4>
+                        <div className="ant-list-item-meta-description">{item.pointCode}</div>
+                      </div>
+                    )
+                  }
+                })
+              }
+            </div>
+              {/* <List
+                dataSource={baseIndexData}
+                renderItem={item => (
+                  <List.Item>
+                    <List.Item.Meta
+                      title={item.pointName}
+                      description={item.pointCode}
+                    />
+                  </List.Item>
+                )}
+              /> */}
+            </div>
+          </Col>
+          <Col span={12}>
+            <div className="base">
+            <div className="bf-controlbar">
+              <button className="control-item button" >
+                <b>函数</b>
+              </button>
+              <Input
+                value={searchFunctionValue}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchFunctionValue(e.target.value)}
+                placeholder="名称或者编号"
+              />
+            </div>
+            <div className="function-wrapper">
+              {
+                functionArr.map((item: IFunction, index: number) => {
+                  if (searchFunctionValue.trim().length > 0) {
+                    if (item.functionName.indexOf(searchFunctionValue) > -1 || item.functionCode.indexOf(searchFunctionValue) > -1) {
+                      return (
+                        <div 
+                          className="item"
+                          onClick={() => handleFunctionItemClick(item)}
+                          key={index}
+                        >
+                          <h4 className="ant-list-item-meta-title">{item.functionName}</h4>
+                          <div className="ant-list-item-meta-description">{item.functionCode}</div>
+                        </div>
+                      )
+                    }
+                  } else {
+                    return (
+                      <div 
+                        className="item"
+                        onClick={() => handleFunctionItemClick(item)}
+                        key={index}
+                      >
+                        <h4 className="ant-list-item-meta-title">{item.functionName}</h4>
+                        <div className="ant-list-item-meta-description">{item.functionCode}</div>
+                      </div>
+                    )
+                  }
+                })
+              }
+            </div>
+            {/* <List
+                dataSource={functionArr}
+                
+                renderItem={(item: IFunction) => (
+                  <List.Item
+                    
+                  >
+                    <List.Item.Meta
+                      title={item.functionName}
+                      description={item.functionCode}
+                    />
+                  </List.Item>
+                )}
+              /> */}
+            </div>
+          </Col>
+        </Row>
       </Modal>
       <Modal
         title="函数"
@@ -307,29 +487,6 @@ const EditCalc = forwardRef((props: any, ref: any) => {
             })
           }
         </Select>
-      </Modal>
-      <Modal
-        title="公式描述"
-        visible={previewVisible}
-        wrapClassName="eidtCalc"
-        onCancel={() =>{setPreviewVisible(false)}}
-        onOk={() =>{setPreviewVisible(false)}}
-      >
-        <div dangerouslySetInnerHTML={{__html: traversalDFSDOM(previewHTML, (ele: HTMLElement) => {
-              if(ele.className === 'value') {
-                const value: string|undefined =  baseIndexData.find((item: IBaseIndex) => item.pointCode === ele.innerText)?.pointName
-               if (value) {
-                ele.innerText = value
-               }
-              }else if (ele.className === 'function'){
-                const value: string|undefined =  functionArr.find((item: IFunction) => item.functionCode === ele.innerText)?.functionName
-                if (value) {
-                  ele.innerText = value
-                }
-              }
-            })?.innerHTML}}>
-          
-        </div>
       </Modal>
     </div>
   )
