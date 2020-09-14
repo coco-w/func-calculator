@@ -8,7 +8,7 @@ import { getBaseIndex, getFunction } from '../../api/index'
 import { IBaseIndex, IFunction } from './type'
 import './index.less'
 import { SelectValue } from 'antd/lib/select'
-import { traversalDFSDOM, debounce } from '@/utils'
+import { traversalDFSDOM } from '@/utils'
 
 const EditCalc = forwardRef((props: any, ref: any) => {
   const instance = useRef<any>(null)
@@ -186,28 +186,31 @@ const EditCalc = forwardRef((props: any, ref: any) => {
   useImperativeHandle(ref, (): AlgorithModal => ({
     open:async (data: funItem) => {
       setShowModel(true)
-      getBaseIndex().then((res: any) => {
-        setBaseIndexData(res.result.slice(0, 20))
-        setTimeout(() => {
-          setBaseIndexData(res.result)  
-        }, 2000);
-        
+      Promise.all([getBaseIndex(data.eaProjectsOid), getFunction(data.eaProjectsOid)]).then((res: any) => {
+        setBaseIndexData(res[0].result)
+        setFunctionArr(res[1].result)
+        setEditorState((old: any) => {
+          let r: any = null
+          if (data.htmlText) {
+            r = BraftEditor.createEditorState(data.htmlText)
+          }else {
+            r = BraftEditor.createEditorState(data.calculateExp)
+          }
+          setTimeout(() => {
+            transtionPreview(r)
+          }, 10)
+          return r
+        })
       })
-      getFunction(data.eaProjectsOid).then((res: any) => {
-        setFunctionArr(res.result)
-      })
-      setEditorState((old: any) => {
-        let r: any = null
-        if (data.htmlText) {
-          r = BraftEditor.createEditorState(data.htmlText)
-        }else {
-          r = BraftEditor.createEditorState(data.calculateExp)
-        }
-        setTimeout(() => {
-          transtionPreview(r)
-        }, 10)
-        return r
-      })
+      // getBaseIndex(data.eaProjectsOid).then((res: any) => {
+      //   if (res.result) {
+      //     setBaseIndexData(res.result)
+      //   }
+      // })
+      // getFunction(data.eaProjectsOid).then((res: any) => {
+      //   setFunctionArr(res.result)
+      // })
+      
     }
   }))
   const handleOk = () => {
@@ -220,6 +223,8 @@ const EditCalc = forwardRef((props: any, ref: any) => {
   }
   const handleCancel = () => {
     setShowModel(false)
+    setBaseIndexData([])
+    setFunctionArr([])
     if (props.close) {
       props.close()
     }

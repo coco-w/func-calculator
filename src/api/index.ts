@@ -79,15 +79,19 @@ export const calcFuncSubmit = (params: funItem): AxiosPromise => {
 export const deleteCalcFunc = (indexCode: string): AxiosPromise => {
   return instance.get('api/eanew/eaProjectIndex/delete', {
     params: {
-      indexCode
+      oid: indexCode
     }
   })
 }
 /**
  * 获取所有基础指标
  */
-export const getBaseIndex = (): AxiosPromise => {
-  return instance.get('api/eanew/eaProjectPoint/detail')
+export const getBaseIndex = (id?: string): AxiosPromise => {
+  return instance.get('api/eanew/eaProjectPoint/detail', {
+    params: {
+      eaProjectsOid: id
+    }
+  })
 }
 
 /**
@@ -98,6 +102,16 @@ export const getFunction = (id?: string): AxiosPromise => {
   return instance.get('api/eanew/eaProjectPoint/selectFunction', {
     params: {
       eaProjectsOid: id
+    }
+  })
+}
+
+export const verification = (eaProjectOid: string, indexCode: string, oid?: string) => {
+  return instance.get('api/eanew/eaProjectIndex/selectCountByIndexCode', {
+    params: {
+      eaProjectOid: eaProjectOid, 
+      indexCode: indexCode,
+      oid: oid,
     }
   })
 }

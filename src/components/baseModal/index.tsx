@@ -1,4 +1,4 @@
-import React, {forwardRef, useState, useImperativeHandle, useEffect} from 'react'
+import React, {forwardRef, useState, useImperativeHandle, useEffect, useLayoutEffect} from 'react'
 import { Modal, Form, Select, Input, Row, Col } from 'antd'
 import './index.less'
 import { MajorClass, SubClass } from '@page/home/type'
@@ -8,17 +8,6 @@ const BaseModal = forwardRef((props: BaseModalProps, ref: any) => {
   const [visible, setVisible] = useState<boolean>(false)
   const [activeSubClass, setActiveSubClass] = useState<Array<SubClass>>([])
   const [form] = Form.useForm()
-  useImperativeHandle(ref, () => ({
-    open: (): void => {
-      setVisible(true)
-    },
-    close: (): void => {
-      setVisible(false)
-    },
-    restForm: (): void => {
-      form.resetFields()
-    }
-  }))
   const handleMajorChange = (value: any): void => {
     const arr: Array<SubClass> = []
     props.subClass.forEach((ele: SubClass) => {
@@ -29,16 +18,36 @@ const BaseModal = forwardRef((props: BaseModalProps, ref: any) => {
     setActiveSubClass(arr)
     form.resetFields(['eaProjectsOid'])
   }
-  useEffect((): void => {
-    if (props.data) {
-      const majorId: string|undefined = props.subClass.find((ele: SubClass) => ele.oid === props.data?.eaProjectsOid)?.eaProjectpoid
-      handleMajorChange(majorId)
-      form.setFieldsValue({
-        ...props.data,
-        major: majorId,
-      }) 
+  useImperativeHandle(ref, () => ({
+    open: (): void => {
+      // form.
+      setVisible(true)
+    },
+    close: (): void => {
+      setVisible(false)
+    },
+    restForm: (): void => {
+      form.resetFields()
     }
-  }, [props.data])
+  }))
+  // useLayoutEffect(() => {})
+  useEffect((): void => {
+    if (visible) {
+      if (props.type === 'update') {
+        const majorId: string|undefined = props.subClass.find((ele: SubClass) => ele.oid === props.data?.eaProjectsOid)?.eaProjectpoid
+        handleMajorChange(majorId)
+        form.setFieldsValue({
+          ...props.data,
+          major: majorId,
+        }) 
+      } else if (props.type === 'copy') {
+        form.setFieldsValue({
+          ...props.data
+        }) 
+      }
+      
+    }
+  }, [visible])
   const handleCancel = (): void => {
     setVisible(false)
   }
@@ -56,6 +65,7 @@ const BaseModal = forwardRef((props: BaseModalProps, ref: any) => {
         width='50%'
         onCancel={handleCancel}
         onOk={handleOk}
+        afterClose={() => form.resetFields()}
       >
         <Form labelAlign="left" form={form}>
           <Row gutter={16}>
@@ -96,7 +106,7 @@ const BaseModal = forwardRef((props: BaseModalProps, ref: any) => {
             </Col>
           </Row>
           <Form.Item name="indexCode" label="指标编号" rules={[{required: true, message: "请输入指标编号"}]} >
-            <Input disabled={props.type === 'add' ? false : true}/>
+            <Input/>
           </Form.Item>
           <Form.Item name="indexName" label="指标名称" rules={[{required: true, message: "请输入指标名称"}]}>
             <Input/>

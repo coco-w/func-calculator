@@ -19,6 +19,7 @@ export interface funItem {
   outVarFunc?: string //外部函数变量
   rangeType?: number
   remark?:	string //备注
+  oid?: string
 }
 
 export interface ColumnItem {
@@ -108,5 +109,6 @@ export interface CalcBaseMsg {
   /**
    * 备注
    */
-  "remark": "string"
+  "remark": "string",
+  "oid": string
 }

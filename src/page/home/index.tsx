@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Table, Button, Row, Form, Select, Input, message } from 'antd'
-import { getCalcFunc, getMajorClass, getSubclass, calcFuncSubmit, deleteCalcFunc } from '../../api'
+import { getCalcFunc, getMajorClass, getSubclass, calcFuncSubmit, deleteCalcFunc, verification } from '../../api'
 import { funItem, AlgorithModal, MajorClass, SubClass, IBaseModal } from './type'
 import './index.less'
 import { ColumnProps, TablePaginationConfig } from 'antd/lib/table'
@@ -26,9 +26,9 @@ const Home: React.FC<any> = () => {
   const [dataSource, setDataSource] =  useState<Array<funItem>>([])
   // const [showEditCalcFunc, setShowEditCalcFunc] = useState<boolean>(false)
   const [editData, setEditData] = useState<funItem | null>(null)
-  const [baseModalTitle, setBaseModalTitle] = useState<'新增' | '编辑' | ''>('')
+  const [baseModalTitle, setBaseModalTitle] = useState<'新增' | '编辑' | '复制' | ''>('')
   const [baseForm, setBaseForm] = useState<funItem | undefined | null>(undefined)
-  const [baseModalType, setBaseModalType] = useState<'add'|'update'>('add')
+  const [baseModalType, setBaseModalType] = useState<'add'|'update'|'copy'>('add')
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false)
   const [tableLoading, setTableLoading] = useState<boolean>(false)
   const [form] = Form.useForm()
@@ -80,7 +80,18 @@ const Home: React.FC<any> = () => {
       setConfirmLoading(false)
     })
   }
-  
+  const handleCopyCalcBase = (item: funItem): void => {
+    if (baseModal.current) {
+      const temp: funItem = Object.assign({}, item)
+      temp.eaProjectsOid = ''
+      setBaseForm({
+        ...temp,
+      })
+      setBaseModalType('copy')
+      setBaseModalTitle('复制')
+      baseModal.current.open()
+    }
+  }
   
   const [columns] = useState<Array<ColumnProps<funItem>>>([
     {
@@ -120,10 +131,15 @@ const Home: React.FC<any> = () => {
         return (
           <div className="btn-wrapper" style={{padding: 0}}>
             <Button type="primary" onClick={handleUpdateCalcBase.bind(this, record)}>修改</Button>
+            <Button type="primary" onClick={handleCopyCalcBase.bind(this, record)}>复制</Button>
             <Button type="primary" danger onClick={(): void => {
                 setDeleteVisible(true)
-                if (record.indexCode) {
-                  setDeleteCode(record.indexCode)
+                if (record.oid) {
+                  setDeleteCode(record.oid)
+                }else {
+                  setDeleteVisible(false)
+                  message.warning('出现异常')
+                  console.log('删除时没有oid')
                 }
               }}
             >删除</Button>
@@ -131,16 +147,17 @@ const Home: React.FC<any> = () => {
           </div>
         )
       },
-      width: '300px',
+      width: '400px',
     }
   ])
   useEffect(() => {
-    onLoad(pages, queryParams)
+    
     getMajorClass().then((res: any) => {
       setMajorClass(res.result.eaProjectbEntityList)
     })
     getSubclass().then((res: any) => {
       setSubClass(res.result.eaProjectsEntityList)
+      onLoad(pages, queryParams)
     })
   }, [])
   // useEffect(() => {
@@ -182,27 +199,59 @@ const Home: React.FC<any> = () => {
       baseModal.current.open()
     }
   }
-  const handleBaseModalSubmit = (value: any): void => {
+  const handleBaseModalSubmit = (value: funItem): void => {
     if (baseModalType === 'add') {
-      calcFuncSubmit(value).then(() => {
-        message.success('提交成功')
-        baseModal.current?.restForm()
-        baseModal.current?.close()
-        onLoad(pages, queryParams)
-      }).catch(() => {
-        // baseModal.current?.close()
+      verification(value.eaProjectsOid as string, value.indexCode as string).then((res: any) => {
+        if (res.result === 0) {
+          calcFuncSubmit(value).then(() => {
+            message.success('提交成功')
+            baseModal.current?.restForm()
+            baseModal.current?.close()
+            onLoad(pages, queryParams)
+          }).catch(() => {
+            // baseModal.current?.close()
+          })
+        }else {
+          message.warning('已经存在')
+        }
       })
     } else if (baseModalType === 'update') {
-      calcFuncSubmit({
-        ...baseForm,
-        ...value
-      }).then(() => {
-        message.success('提交成功')
-        baseModal.current?.restForm()
-        baseModal.current?.close()
-        onLoad(pages, queryParams)
-      }).catch(() => {
-        // baseModal.current?.close()
+      
+      verification(value.eaProjectsOid as string, value.indexCode as string, baseForm?.oid).then((res: any) => {
+        if (res.result === 0) {
+          calcFuncSubmit({
+            ...baseForm,
+            ...value
+          }).then(() => {
+            message.success('提交成功')
+            baseModal.current?.restForm()
+            baseModal.current?.close()
+            onLoad(pages, queryParams)
+          }).catch(() => {
+            // baseModal.current?.close()
+          })
+        }else {
+          message.warning('已经存在')
+        }
+      })
+    } else if (baseModalType === 'copy') {
+      verification(value.eaProjectsOid as string, value.indexCode as string).then((res: any) => {
+        if (res.result === 0) {
+          calcFuncSubmit({
+            ...baseForm,
+            ...value,
+            oid: '',
+          }).then(() => {
+            message.success('复制成功')
+            baseModal.current?.restForm()
+            baseModal.current?.close()
+            onLoad(pages, queryParams)
+          }).catch(() => {
+            // baseModal.current?.close()
+          })
+        }else {
+          message.warning('已经存在')
+        }
       })
     }
   }
