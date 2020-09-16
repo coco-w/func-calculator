@@ -3,6 +3,7 @@ import axios, { AxiosPromise, AxiosRequestConfig } from 'axios'
 import { message } from 'antd'
 import { TablePaginationConfig } from 'antd/lib/table'
 import { funItem } from '@page/home/type'
+import { TemplateItem } from '@page/template/type'
 const instance = axios.create({
   headers: {
     'content-type':'application/json;charset=utf-8',
@@ -11,11 +12,9 @@ const instance = axios.create({
   }
 })
 instance.interceptors.request.use((config: AxiosRequestConfig) => {
-  console.log(config)
   return config
 })
 instance.interceptors.response.use(res => {
-  console.log(res)
   if (res.data.flag === 'error') {
     if (res.data.errorCode === '403') {
       message.warning('没有登录')
@@ -112,6 +111,51 @@ export const verification = (eaProjectOid: string, indexCode: string, oid?: stri
       eaProjectOid: eaProjectOid, 
       indexCode: indexCode,
       oid: oid,
+    }
+  })
+}
+/**
+ * @param eaProjectsOid id
+ * @param valueSense 中文名
+ */
+export interface Templatepage {
+  eaProjectsOid?: string;
+  valueSense?: string;
+}
+/**
+ * 查询模板
+ * @param current 
+ * @param pageSize 
+
+ */
+export const getTemplatepage = (pages: TablePaginationConfig, params?: Templatepage) => {
+  return instance.get('api/eanew/eaTempDemo/page', {
+    params: {
+      current: pages.current,
+      pageSize: pages.pageSize,
+      ...params
+    }
+  })
+}
+/**
+ * 保存
+ * @param data template数据
+ */
+export const saveTemplate = (data: TemplateItem) => {
+  return instance.post('api/eanew/eaTempDemo/submit', {
+    eaTempDemoEntity: {
+      ...data
+    }
+  })
+}
+/**
+ * 删除 template
+ * @param oid id
+ */
+export const deleteTemplate = (oid: string) => {
+  return instance.get('api/eanew/eaTempDemo/delete', {
+    params: {
+      oid
     }
   })
 }
