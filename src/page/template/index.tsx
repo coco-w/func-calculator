@@ -6,6 +6,7 @@ import { MajorClass, SubClass } from '../home/type'
 import { TablePaginationConfig } from 'antd/lib/table'
 import { Store } from 'antd/lib/form/interface'
 import './index.less'
+import province from '@/utils/province'
 // import  from 'antd/lib/modal/Modal'
 const TemplatePage: React.FC = () => {
   const [tableData, setTableData] = useState<Array<TemplateItem>>([])
@@ -30,7 +31,8 @@ const TemplatePage: React.FC = () => {
     oid: '',
     valueCode: '',
     valueDemo: '',
-    valueSense: ''
+    valueSense: '',
+    address: '',
   })
   const [deleteModalVisible, setDeleteModalVisible] = useState<boolean>(false)
   const [deleteConfirmLoading, setDeleteConfirmLoading] = useState<boolean>(false)
@@ -38,7 +40,6 @@ const TemplatePage: React.FC = () => {
   const [deleteOid, setDeleteOid] = useState<string>('')
   const [form] = Form.useForm()
   const [modalForm] = Form.useForm()
-
   const onLoad = (pages: TablePaginationConfig, params: any): void => {
     setTableLoading(true)
     getTemplatepage(pages, params).then((res: any) => {
@@ -75,6 +76,7 @@ const TemplatePage: React.FC = () => {
       setModalSubClass(arr)
       modalForm.setFieldsValue({
         ...record,
+        address: Number(record.address),
         major
       })
       setModalFormData({...record})
@@ -84,25 +86,6 @@ const TemplatePage: React.FC = () => {
     setDeleteModalVisible(true)
     setDeleteModalContent(`确认删除 ${record.valueSense} ？`)
     setDeleteOid(record.oid)
-  //   const modal = Modal.error({
-  //     okText: '确认',
-  //     cancelText: '取消',
-  //     content: ,
-  //     onCancel: () => {
-  //       modal.destroy()
-  //     },
-  //     onOk: () => {
-  //       deleteTemplate(record.oid).then((res: any) => {
-  //         modal.destroy()
-  //         message.success('删除成功')
-  //         onLoad(pages, queryParams)
-
-  //       }).catch(() => {
-  //         modal.destroy()
-  //         message.warning('删除失败')
-  //       })
-  //     }
-  //   })
   }
   const columns = [
     {
@@ -125,6 +108,16 @@ const TemplatePage: React.FC = () => {
     {
       title: '名称',
       dataIndex: 'valueSense'
+    },
+    {
+      title: '省份',
+      dataIndex: 'address',
+      render: (value: any, record: TemplateItem) => {
+        const item = province[Number(value)]
+        return (
+          <span>{item}</span>
+        )
+      }
     },
     {
       title: '最大值',
@@ -246,7 +239,8 @@ const TemplatePage: React.FC = () => {
       oid: '',
       valueCode: '',
       valueDemo: '',
-      valueSense: ''
+      valueSense: '',
+      address: '',
     })
   }
   const handleTableChange = (pagination: TablePaginationConfig): void => {
@@ -368,18 +362,25 @@ const TemplatePage: React.FC = () => {
                 </Form.Item>
               </Col>
             </Row>
-            {/* <Form.Item 
-              label="编码" 
-              name="valueCode"
-              rules={[
-                {
-                  required: true,
-                  message: "编码为必填项"
-                }
-              ]}
+            <Form.Item 
+              label="省份" 
+              name="address"
             >
-              <Input/>
-            </Form.Item> */}
+              <Select>
+                {
+                  province.map(((ele: string, index: number) => {
+                    return (
+                      <Select.Option
+                        value={index}
+                        key={index}
+                      >
+                        {ele}
+                      </Select.Option>
+                    )
+                  }))
+                }
+              </Select>
+            </Form.Item>
             <Form.Item 
               label="中文名" 
               name="valueSense"

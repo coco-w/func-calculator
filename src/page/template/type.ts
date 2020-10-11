@@ -15,6 +15,7 @@ export interface TemplateItem {
   valueCode: string
   valueDemo: string
   valueSense: string
+  address: string|number
 }
 
 export interface QueryParams {
