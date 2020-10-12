@@ -194,7 +194,7 @@ const EditCalc = forwardRef((props: any, ref: any) => {
           if (data.htmlText) {
             r = BraftEditor.createEditorState(data.htmlText)
           }else {
-            r = BraftEditor.createEditorState(data.calculateExp)
+            r = BraftEditor.createEditorState(data.expDesc)
           }
           setTimeout(() => {
             transtionPreview(r)

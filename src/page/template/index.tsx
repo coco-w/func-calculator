@@ -393,6 +393,18 @@ const TemplatePage: React.FC = () => {
             >
               <Input/>
             </Form.Item>
+            <Form.Item
+              label="code"
+              name="valueCode"
+              rules={[
+                {
+                  required: true,
+                  message: "code为必填项"
+                }
+              ]}
+            >
+              <Input/>
+            </Form.Item>
             <Form.Item label="最大值" name="maxValue">
               <Input/>
             </Form.Item>

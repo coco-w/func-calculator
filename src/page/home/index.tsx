@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef , MutableRefObject} from 'react'
 import { Table, Button, Row, Form, Select, Input, message } from 'antd'
 import { getCalcFunc, getMajorClass, getSubclass, calcFuncSubmit, deleteCalcFunc, verification } from '../../api'
 import { funItem, AlgorithModal, MajorClass, SubClass, IBaseModal } from './type'
@@ -32,12 +32,17 @@ const Home: React.FC<any> = () => {
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false)
   const [tableLoading, setTableLoading] = useState<boolean>(false)
   const [form] = Form.useForm()
+  const subClassRef: MutableRefObject<SubClass[]>  = useRef([])
+  const subMajorRef: MutableRefObject<MajorClass[]> = useRef([])
   /**
    * 加载table数据
    */
   const onLoad = (pages: TablePaginationConfig, params: any): void => {
+    
     setTableLoading(true)
+    
     getCalcFunc(pages, params).then((res: any) => {
+      
       setPages({
         ...pages,
         total: res.result.total,
@@ -108,6 +113,35 @@ const Home: React.FC<any> = () => {
       dataIndex: 'indexCode',
     },
     {
+      title: '项目大类',
+      dataIndex: 'eaProjectsOid',
+      render: function render(value: any, record: funItem, index: number): React.ReactElement {  
+          return (
+            <span>
+                {
+                  subMajorRef.current.find(le => le.oid === String(subClassRef.current.find(le => le.oid === String(value))?.eaProjectpoid))?.projectbname
+                }
+               
+            </span>
+          )
+        
+        
+      }
+    },
+    {
+      title: '项目小类',
+      dataIndex: 'eaProjectsOid',
+      render: function render(value: any, record: funItem, index: number): React.ReactElement {
+        
+        return (
+          <span>
+            {
+              subClassRef.current.find(le => le.oid === String(value))?.projectsname
+            }
+          </span>
+        )}
+    },
+    {
       title: '指标名称',
       dataIndex: 'indexName',
     },
@@ -128,6 +162,7 @@ const Home: React.FC<any> = () => {
     {
       title: '操作',
       render: function render(value: any, record: funItem): React.ReactElement {
+       
         return (
           <div className="btn-wrapper" style={{padding: 0}}>
             <Button type="primary" onClick={handleUpdateCalcBase.bind(this, record)}>修改</Button>
@@ -140,6 +175,7 @@ const Home: React.FC<any> = () => {
                   setDeleteVisible(false)
                   message.warning('出现异常')
                   console.log('删除时没有oid')
+
                 }
               }}
             >删除</Button>
@@ -154,9 +190,11 @@ const Home: React.FC<any> = () => {
     
     getMajorClass().then((res: any) => {
       setMajorClass(res.result.eaProjectbEntityList)
+      subMajorRef.current = res.result.eaProjectbEntityList
     })
     getSubclass().then((res: any) => {
       setSubClass(res.result.eaProjectsEntityList)
+      subClassRef.current = res.result.eaProjectsEntityList
       onLoad(pages, queryParams)
     })
   }, [])
