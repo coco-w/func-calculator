@@ -39,7 +39,7 @@ instance.interceptors.response.use(res => {
  */
 
 export const getCalcFunc = (pages: TablePaginationConfig, params: any): AxiosPromise => {
-  return instance.get('api/eanew/eaProjectIndex/detail', {
+  return instance.get('api/eaProjectIndex/detail', {
     params: {
       current: pages.current,
       pageSize:pages.pageSize,
@@ -52,14 +52,14 @@ export const getCalcFunc = (pages: TablePaginationConfig, params: any): AxiosPro
  * 查询大类
  */
 export const getMajorClass = (): AxiosPromise => {
-  return instance.get('api/eanew/eaProjectb/detail')
+  return instance.get('api/eaProjectb/detail')
 }
 
 /**
  * 查询小类
  */
 export const getSubclass = (): AxiosPromise => {
-  return instance.get('api/eanew/eaProjects/detail')
+  return instance.get('api/eaProjects/detail')
 }
 
 /**
@@ -67,7 +67,7 @@ export const getSubclass = (): AxiosPromise => {
  * @param params 
  */
 export const calcFuncSubmit = (params: funItem): AxiosPromise => {
-  return instance.post('api/eanew/eaProjectIndex/submit', {
+  return instance.post('api/eaProjectIndex/submit', {
     eaProjectIndexEntity: params
   })
 }
@@ -76,7 +76,7 @@ export const calcFuncSubmit = (params: funItem): AxiosPromise => {
  * @param indexCode 
  */
 export const deleteCalcFunc = (indexCode: string): AxiosPromise => {
-  return instance.get('api/eanew/eaProjectIndex/delete', {
+  return instance.get('api/eaProjectIndex/delete', {
     params: {
       oid: indexCode
     }
@@ -86,7 +86,7 @@ export const deleteCalcFunc = (indexCode: string): AxiosPromise => {
  * 获取所有基础指标
  */
 export const getBaseIndex = (id?: string): AxiosPromise => {
-  return instance.get('api/eanew/eaProjectPoint/detail', {
+  return instance.get('api/eaProjectPoint/detail', {
     params: {
       eaProjectsOid: id
     }
@@ -98,7 +98,7 @@ export const getBaseIndex = (id?: string): AxiosPromise => {
  * @param id 指标类型
  */
 export const getFunction = (id?: string): AxiosPromise => {
-  return instance.get('api/eanew/eaProjectPoint/selectFunction', {
+  return instance.get('api/eaProjectPoint/selectFunction', {
     params: {
       eaProjectsOid: id
     }
@@ -106,7 +106,7 @@ export const getFunction = (id?: string): AxiosPromise => {
 }
 
 export const verification = (eaProjectOid: string, indexCode: string, oid?: string) => {
-  return instance.get('api/eanew/eaProjectIndex/selectCountByIndexCode', {
+  return instance.get('api/eaProjectIndex/selectCountByIndexCode', {
     params: {
       eaProjectOid: eaProjectOid, 
       indexCode: indexCode,
@@ -121,6 +121,7 @@ export const verification = (eaProjectOid: string, indexCode: string, oid?: stri
 export interface Templatepage {
   eaProjectsOid?: string;
   valueSense?: string;
+  address?: string|number|null;
 }
 /**
  * 查询模板
@@ -129,7 +130,7 @@ export interface Templatepage {
 
  */
 export const getTemplatepage = (pages: TablePaginationConfig, params?: Templatepage) => {
-  return instance.get('api/eanew/eaTempDemo/page', {
+  return instance.get('api/eaTempDemo/page', {
     params: {
       current: pages.current,
       pageSize: pages.pageSize,
@@ -142,7 +143,7 @@ export const getTemplatepage = (pages: TablePaginationConfig, params?: Templatep
  * @param data template数据
  */
 export const saveTemplate = (data: TemplateItem) => {
-  return instance.post('api/eanew/eaTempDemo/submit', {
+  return instance.post('api/eaTempDemo/submit', {
     eaTempDemoEntity: {
       ...data
     }
@@ -153,7 +154,7 @@ export const saveTemplate = (data: TemplateItem) => {
  * @param oid id
  */
 export const deleteTemplate = (oid: string) => {
-  return instance.get('api/eanew/eaTempDemo/delete', {
+  return instance.get('api/eaTempDemo/delete', {
     params: {
       oid
     }

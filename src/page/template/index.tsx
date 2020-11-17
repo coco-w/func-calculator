@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Button, Col, Form, Input, Row, Select, Table, Modal, message } from 'antd'
+import { Button, Col, Form, Input, Row, Select, Table, Modal, message, Drawer } from 'antd'
 import { TemplateItem, QueryParams } from './type'
 import { getMajorClass, getSubclass, getTemplatepage, saveTemplate, deleteTemplate } from '@/api/index'
 import { MajorClass, SubClass } from '../home/type'
@@ -33,6 +33,7 @@ const TemplatePage: React.FC = () => {
     valueDemo: '',
     valueSense: '',
     address: '',
+    phase: '',
   })
   const [deleteModalVisible, setDeleteModalVisible] = useState<boolean>(false)
   const [deleteConfirmLoading, setDeleteConfirmLoading] = useState<boolean>(false)
@@ -76,7 +77,7 @@ const TemplatePage: React.FC = () => {
       setModalSubClass(arr)
       modalForm.setFieldsValue({
         ...record,
-        address: Number(record.address),
+        address: (record.address === null || record.address === '') ? '' : Number(record.address),
         major
       })
       setModalFormData({...record})
@@ -113,10 +114,30 @@ const TemplatePage: React.FC = () => {
       title: '省份',
       dataIndex: 'address',
       render: (value: any, record: TemplateItem) => {
-        const item = province[Number(value)]
-        return (
-          <span>{item}</span>
-        )
+        if (value) {
+          const item = province[Number(value)]
+          return (
+            <span>{item}</span>
+          )
+        }else {
+          return null
+        }
+        
+      }
+    },
+    {
+      title: '工作阶段',
+      dataIndex: 'phase',
+      render: (value: any) => {
+        if (value === '0') {
+          return (
+            <span>新建</span>
+          )
+        }else {
+          return (
+            <span>后评价</span>
+          )
+        }
       }
     },
     {
@@ -174,21 +195,38 @@ const TemplatePage: React.FC = () => {
     setModalTitle('新增')
     setModalVisible(true)
   }
+  const modalClose = (): void => {
+    modalForm.resetFields()
+    setModalFormData({
+      eaProjectsOid: '',
+      maxValue: '',
+      minValue: '',
+      oid: '',
+      valueCode: '',
+      valueDemo: '',
+      valueSense: '',
+      address: '',
+      phase: '',
+    })
+  }
   const handleModalCancel = (): void => {
+    modalClose()
     setModalVisible(false)
   }
   const handleModalOK = (): void => {
     try {
       modalForm.validateFields().then(async (value: any) => {
         let data: TemplateItem = {...value}
+        data.address = data.address !== undefined ? data.address : ''
+        
         if (modalTitle === '编辑') {
           data = {
             ...modalFormData,
-            ...value
+            ...data
           }
         }
         setConfirmLoading(true)
-        const res: any = await getTemplatepage({pageSize: 2, current: 1}, {valueSense: data.valueSense})  
+        const res: any = await getTemplatepage({pageSize: 2, current: 1}, {valueSense: data.valueSense, address: data.address})  
         const temp: TemplateItem = res.result.records.find((ele: TemplateItem) => ele.valueSense === data.valueSense && ele.eaProjectsOid === data.eaProjectsOid)
         if (temp && modalTitle === '新增') {
           modalForm.setFields([
@@ -211,6 +249,7 @@ const TemplatePage: React.FC = () => {
           saveTemplate(data).then((res: any) => {
             setConfirmLoading(false)
             setModalVisible(false)
+            modalClose()
             onLoad(pages, queryParams)
           })
         }
@@ -229,19 +268,6 @@ const TemplatePage: React.FC = () => {
     })
     modalForm.resetFields(['eaProjectsOid'])
     setModalSubClass(arr)
-  }
-  const modalClose = (): void => {
-    modalForm.resetFields()
-    setModalFormData({
-      eaProjectsOid: '',
-      maxValue: '',
-      minValue: '',
-      oid: '',
-      valueCode: '',
-      valueDemo: '',
-      valueSense: '',
-      address: '',
-    })
   }
   const handleTableChange = (pagination: TablePaginationConfig): void => {
     setPages({
@@ -304,15 +330,24 @@ const TemplatePage: React.FC = () => {
       >
 
       </Table>
-      <Modal
+      <Drawer
         title={modalTitle}
         visible={modalVisible}
-        onCancel={handleModalCancel}
-        onOk={handleModalOK}
-        okText="确认"
-        cancelText="取消"
-        afterClose={modalClose}
-        confirmLoading={confirmLoading}
+        width="500px"
+        footer={
+          <div
+           style={{
+             textAlign: 'right'
+           }}
+          >
+            <Button onClick={handleModalCancel}>取消</Button>
+            <Button onClick={handleModalOK} type="primary" style={{marginLeft: 10}} loading={confirmLoading}>确认</Button>
+          </div>
+        }
+        // onCancel={handleModalCancel}
+        // onOk={handleModalOK}
+        // afterClose={modalClose}
+        // confirmLoading={confirmLoading}
       >
         <Form form={modalForm}>
             <Row>
@@ -366,7 +401,7 @@ const TemplatePage: React.FC = () => {
               label="省份" 
               name="address"
             >
-              <Select>
+              <Select allowClear>
                 {
                   province.map(((ele: string, index: number) => {
                     return (
@@ -379,6 +414,23 @@ const TemplatePage: React.FC = () => {
                     )
                   }))
                 }
+              </Select>
+            </Form.Item>
+            <Form.Item
+              label="工作阶段"
+              name="phase"
+            >
+              <Select allowClear>
+                <Select.Option
+                  value={'0'}
+                >
+                  新建
+                </Select.Option>
+                <Select.Option
+                  value={'1'}
+                >
+                  后评价
+                </Select.Option>
               </Select>
             </Form.Item>
             <Form.Item 
@@ -415,7 +467,7 @@ const TemplatePage: React.FC = () => {
               <Input/>
             </Form.Item>
         </Form>
-      </Modal>
+      </Drawer>
       <Modal
         title="删除"
         visible={deleteModalVisible}

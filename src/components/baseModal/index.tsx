@@ -1,5 +1,5 @@
 import React, {forwardRef, useState, useImperativeHandle, useEffect, useLayoutEffect} from 'react'
-import { Modal, Form, Select, Input, Row, Col } from 'antd'
+import { Modal, Form, Select, Input, Row, Col, Drawer, Button } from 'antd'
 import './index.less'
 import { MajorClass, SubClass } from '@page/home/type'
 import { BaseModalProps } from './type'
@@ -49,6 +49,7 @@ const BaseModal = forwardRef((props: BaseModalProps, ref: any) => {
     }
   }, [visible])
   const handleCancel = (): void => {
+    form.resetFields()
     setVisible(false)
   }
   const handleOk = (): void => {
@@ -59,13 +60,24 @@ const BaseModal = forwardRef((props: BaseModalProps, ref: any) => {
   
   return (
     <div>
-      <Modal
+      <Drawer
         title={props.title}
         visible={visible}
-        width='50%'
-        onCancel={handleCancel}
-        onOk={handleOk}
-        afterClose={() => form.resetFields()}
+        closable={false}
+        width='500px'
+        footer={
+          <div
+           style={{
+             textAlign: 'right'
+           }}
+          >
+            <Button onClick={handleCancel}>取消</Button>
+            <Button onClick={handleOk} type="primary" style={{marginLeft: 10}}>确认</Button>
+          </div>
+        }
+        // onCancel={handleCancel}
+        // onOk={handleOk}
+        // afterClose={() => form.resetFields()}
       >
         <Form labelAlign="left" form={form}>
           <Row gutter={16}>
@@ -121,7 +133,7 @@ const BaseModal = forwardRef((props: BaseModalProps, ref: any) => {
             <Input/>
           </Form.Item>
         </Form>
-      </Modal>
+      </Drawer>
     </div>
   )
 })

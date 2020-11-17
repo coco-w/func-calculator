@@ -16,6 +16,7 @@ export interface TemplateItem {
   valueDemo: string
   valueSense: string
   address: string|number
+  phase: string|number
 }
 
 export interface QueryParams {
