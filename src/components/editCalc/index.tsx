@@ -1,12 +1,14 @@
-import React, { useState, forwardRef, useImperativeHandle, useRef } from 'react'
+import React, { useState, forwardRef, useImperativeHandle, useRef ,useEffect} from 'react'
 import BraftEditor, { ControlType } from 'braft-editor'
 import { ContentUtils } from 'braft-utils'
 import 'braft-editor/dist/index.css'
 import { Modal, Select, message, Row, Col, Input } from 'antd'
 import { AlgorithModal, funItem } from '../../page/home/type'
-import { getBaseIndex, getFunction } from '../../api/index'
+import { getBaseIndex, getFunction,getCalcFuncs} from '../../api/index'
 import { IBaseIndex, IFunction } from './type'
+import { ColumnProps, TablePaginationConfig } from 'antd/lib/table'
 import './index.less'
+
 import { SelectValue } from 'antd/lib/select'
 import { traversalDFSDOM } from '@/utils'
 
@@ -16,6 +18,7 @@ const EditCalc = forwardRef((props: any, ref: any) => {
   const [editorState, setEditorState] = useState<any>(BraftEditor.createEditorState(null))
   const [baseIndexVisible, setBaseIndexVisible] = useState<boolean>(false)
   const [baseIndexData, setBaseIndexData] = useState<Array<IBaseIndex>>([])
+  const [baseName, setBaseName] = useState<any>([])
   const [baseIndexValue, setBaseIndexValue] = useState<SelectValue>('')
   const [functionArr, setFunctionArr] = useState<Array<IFunction>>([])
   const [functionVisible, setFunctionVisible] = useState<boolean>(false)
@@ -25,6 +28,12 @@ const EditCalc = forwardRef((props: any, ref: any) => {
   const [timer, setTimer] = useState<any>(null)
   const [searchBaseIndexValue, setSearchBaseIndexValue] = useState<string>('')
   const [searchFunctionValue, setSearchFunctionValue] = useState<string>('')
+  const [searchNameValue, setSearchNameValue] = useState<string>('')
+  const [pages, setPages] = useState<TablePaginationConfig>({
+    current: 1,
+    pageSize: 10,
+    total: 0,
+  })
   const controls: ControlType|Array<any> = [
     {
       key: 'if',
@@ -95,6 +104,8 @@ const EditCalc = forwardRef((props: any, ref: any) => {
        return <span data-foo={foo} className="value">{props.children}</span>
       }else if (foo === 'function') {
         return <span data-foo={foo} className="function">{props.children}</span>
+      }else if(foo === 'name'){
+        return <span data-foo={foo} className='name'>{props.children}</span>
       }else{
         return <span>{props.children}</span>
       }
@@ -126,12 +137,21 @@ const EditCalc = forwardRef((props: any, ref: any) => {
             foo: node.dataset.foo
           }
         }
+      }else if(nodeName.toLowerCase() === 'span' && node.classList && (node.classList.contains('name') || node.classList.contains('name1'))) {
+        return {
+          mutability: 'IMMUTABLE',
+          data: {
+            foo: node.dataset.foo
+          }
+        }
       }
     },
     // 指定输出该entnty在输出的html中的呈现方式
     exporter: (entityObject: any, originalText: any): JSX.Element => {
+      
       // 注意此处的entityObject并不是一个entity实例，而是一个包含type、mutability和data属性的对象
       const { foo } = entityObject.data
+
       if (foo === 'keyword') {
         return <span data-foo={foo} className="keyword">{originalText}</span>
       }else if (foo === 'value') {
@@ -152,7 +172,18 @@ const EditCalc = forwardRef((props: any, ref: any) => {
         } else {
           return <span data-foo={foo} className="value">{originalText}</span>
         }
-      }else {
+      }else if(foo === 'name'){
+        
+          const value: string | undefined = baseName.find((ele: any) => ele.indexCode === originalText)?.indexName
+       
+         if(value){
+          return <span data-foo={foo} className="name">{value}</span>
+         }else{
+          return <span data-foo={foo} className="name">{originalText}</span>
+         }
+        
+      }
+      else {
         return <span>{originalText}</span>
       }
       
@@ -163,7 +194,6 @@ const EditCalc = forwardRef((props: any, ref: any) => {
   // 加载扩展模块
   BraftEditor.use(entityExtension)
   const transtionPreview: (a: any) => void = (editorState: any) => {
-    console.log('preview')
     const html: string = editorState.toHTML()
     const div: HTMLElement = document.createElement('div')
     div.innerHTML = html
@@ -178,17 +208,24 @@ const EditCalc = forwardRef((props: any, ref: any) => {
         if (value) {
           ele.innerText = value
         }
+      }else if (ele.className === 'name'){
+        const value: string|undefined =  baseName.find((item: any) => item.indexCode === ele.innerText)?.indexName
+        if (value) {
+          ele.innerText = value
+        }
       }
     })
     
     setPreviewHTML(previewDOM.innerHTML)
   }
+  
   useImperativeHandle(ref, (): AlgorithModal => ({
     open:async (data: funItem) => {
       setShowModel(true)
-      Promise.all([getBaseIndex(data.eaProjectsOid), getFunction(data.eaProjectsOid)]).then((res: any) => {
+      Promise.all([getBaseIndex(data.eaProjectsOid), getFunction(data.eaProjectsOid),getCalcFuncs(2000,data.eaProjectsOid),]).then((res: any) => {
         setBaseIndexData(res[0].result)
         setFunctionArr(res[1].result)
+        setBaseName(res[2].result.records)
         setEditorState((old: any) => {
           let r: any = null
           if (data.htmlText) {
@@ -213,6 +250,7 @@ const EditCalc = forwardRef((props: any, ref: any) => {
       
     }
   }))
+  
   const handleOk = () => {
     setShowModel(false)
     const text: string = editorState.toText()
@@ -229,6 +267,7 @@ const EditCalc = forwardRef((props: any, ref: any) => {
       props.close()
     }
   }
+
   
   const handleChange = (editorState: any) => {
     // console.log(instance.current.getValue())
@@ -238,7 +277,7 @@ const EditCalc = forwardRef((props: any, ref: any) => {
         clearTimeout(old)
       }else {
         const t: any = setTimeout(() => {
-          console.log('111')
+         
           transtionPreview(editorState)
         }, 500)
         return t
@@ -270,6 +309,7 @@ const EditCalc = forwardRef((props: any, ref: any) => {
   }
 
   const handleFunctionItemClick = (item: IFunction) => {
+
     setEditorState(ContentUtils.insertHTML(editorState, `<span data-foo="function" class="function">${item.functionCode}</span>`))
     setTimeout(() => {
       instance.current.forceRender()  
@@ -278,6 +318,7 @@ const EditCalc = forwardRef((props: any, ref: any) => {
     setFunctionValue('')
   }
   const handleBaseIndexItemClick = ((item: IBaseIndex) => {
+
     setEditorState(ContentUtils.insertHTML(editorState, `<span data-foo="value" class="value">${item.pointCode}</span>`))
     setTimeout(() => {
       instance.current.forceRender()  
@@ -285,6 +326,17 @@ const EditCalc = forwardRef((props: any, ref: any) => {
     setBaseIndexVisible(false)
     setBaseIndexValue('')
   })
+  const handleBaseNameItemClick = ((item: any) => {
+    setEditorState(ContentUtils.insertHTML(editorState, `<span data-foo="name" class="name">${item.indexCode}</span>`))
+    setTimeout(() => {
+      instance.current.forceRender()  
+    }, 10)
+    setBaseIndexVisible(false)
+    setBaseIndexValue('')
+  })
+  
+  
+
  
   const width = '100%'
   return (
@@ -320,7 +372,7 @@ const EditCalc = forwardRef((props: any, ref: any) => {
           </Col>
         </Row>
         <Row gutter={12}>
-          <Col span={12}>
+          <Col span={8}>
             <div className="base">
             <div className="bf-controlbar">
                 <button className="control-item button" >
@@ -377,7 +429,7 @@ const EditCalc = forwardRef((props: any, ref: any) => {
               /> */}
             </div>
           </Col>
-          <Col span={12}>
+          <Col span={8}>
             <div className="base">
             <div className="bf-controlbar">
               <button className="control-item button" >
@@ -414,6 +466,65 @@ const EditCalc = forwardRef((props: any, ref: any) => {
                       >
                         <h4 className="ant-list-item-meta-title">{item.functionName}</h4>
                         <div className="ant-list-item-meta-description">{item.functionCode}</div>
+                      </div>
+                    )
+                  }
+                })
+              }
+            </div>
+            {/* <List
+                dataSource={functionArr}
+                
+                renderItem={(item: IFunction) => (
+                  <List.Item
+                    
+                  >
+                    <List.Item.Meta
+                      title={item.functionName}
+                      description={item.functionCode}
+                    />
+                  </List.Item>
+                )}
+              /> */}
+            </div>
+          </Col>
+          <Col span={8}>
+            <div className="base">
+            <div className="bf-controlbar">
+              <button className="control-item button" >
+                <b>新增的</b>
+              </button>
+              <Input
+                value={searchNameValue}
+                onChange={e => setSearchNameValue(e.target.value) }
+                placeholder="名称或者编号"
+              />
+            </div>
+            <div className="function-wrapper">
+              {
+                baseName.map((item: any, index: number) => {
+                  if (searchNameValue.trim().length > 0) {
+                    if (item.indexCode.indexOf(searchNameValue) > -1 || item.indexName.indexOf(searchNameValue) > -1) {
+                      return (
+                        <div 
+                          className="item"
+                          onClick={() => handleBaseNameItemClick(item)}
+                          key={index}
+                        >
+                          <h4 className="ant-list-item-meta-title">{item.indexName}</h4>
+                          <div className="ant-list-item-meta-description">{item.indexCode}</div>
+                        </div>
+                      )
+                    }
+                  } else {
+                    return (
+                      <div 
+                        className="item"
+                        onClick={() => handleBaseNameItemClick(item)}
+                        key={index}
+                      >
+                        <h4 className="ant-list-item-meta-title">{item.indexName}</h4>
+                        <div className="ant-list-item-meta-description">{item.indexCode}</div>
                       </div>
                     )
                   }

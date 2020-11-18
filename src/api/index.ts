@@ -160,3 +160,13 @@ export const deleteTemplate = (oid: string) => {
     }
   })
 }
+
+export const getCalcFuncs = (pages: any, params: any): AxiosPromise => {
+  return instance.get('api/eaProjectIndex/detail', {
+    params: {
+      pageSize: pages,
+      eaProjectsOid:params
+    
+    }
+  })
+}
