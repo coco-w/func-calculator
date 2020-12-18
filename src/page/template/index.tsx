@@ -20,7 +20,7 @@ const TemplatePage: React.FC = () => {
     pageSize: 10,
     total: 0,
   })
-  const [modalTitle, setModalTitle] = useState<'新增'|'编辑'>('新增')
+  const [modalTitle, setModalTitle] = useState<'新增'|'编辑'|'复制'>('新增')
   const [modalVisible, setModalVisible] = useState<boolean>(false)
   const [modalSubClass, setModalSubClass] = useState<Array<SubClass>>([])
   const [confirmLoading, setConfirmLoading] = useState<boolean>(false)
@@ -39,6 +39,7 @@ const TemplatePage: React.FC = () => {
   const [deleteConfirmLoading, setDeleteConfirmLoading] = useState<boolean>(false)
   const [deleteModalContent, setDeleteModalContent] = useState<string>('')
   const [deleteOid, setDeleteOid] = useState<string>('')
+  const [isCapital, setIsCapital] = useState<boolean>(true)
   const [form] = Form.useForm()
   const [modalForm] = Form.useForm()
   const onLoad = (pages: TablePaginationConfig, params: any): void => {
@@ -82,11 +83,41 @@ const TemplatePage: React.FC = () => {
       })
       setModalFormData({...record})
     }
+    if (record.valueCode === 'js_ldzj') {
+      setIsCapital(false)
+    }else {
+      setIsCapital(true)
+    }
   }
   const handleDelete = (record: TemplateItem): void => {
     setDeleteModalVisible(true)
     setDeleteModalContent(`确认删除 ${record.valueSense} ？`)
     setDeleteOid(record.oid)
+  }
+  const handleCopy = (record: TemplateItem): void => {
+    setModalTitle("复制")
+    setModalVisible(true)
+    const major: string|undefined = subClass.find((ele: SubClass) => ele.oid === record.eaProjectsOid)?.eaProjectpoid
+    if(major) {
+      const arr: Array<SubClass> = []
+      subClass.forEach((ele: SubClass) => {
+        if (ele.eaProjectpoid === major) {
+          arr.push(ele)
+        }
+      })
+      setModalSubClass(arr)
+      modalForm.setFieldsValue({
+        ...record,
+        address: (record.address === null || record.address === '') ? '' : Number(record.address),
+        major
+      })
+      setModalFormData({...record})
+    }
+    if (record.valueCode === 'js_ldzj') {
+      setIsCapital(false)
+    }else {
+      setIsCapital(true)
+    }
   }
   const columns = [
     {
@@ -133,10 +164,12 @@ const TemplatePage: React.FC = () => {
           return (
             <span>新建</span>
           )
-        }else {
+        }else if(value === '1') {
           return (
             <span>后评价</span>
           )
+        }else {
+          return null
         }
       }
     },
@@ -158,6 +191,7 @@ const TemplatePage: React.FC = () => {
         return (
           <div className="btn-wrapper">
             <Button type="primary" onClick={() => {handleUpdate(record)}}>编辑</Button>
+            <Button type="primary" onClick={() => {handleCopy(record)}}>复制</Button>
             <Button danger type="primary" onClick={() => {handleDelete(record)}}>删除</Button>
           </div>
         )
@@ -225,10 +259,17 @@ const TemplatePage: React.FC = () => {
             ...data
           }
         }
+        if (modalTitle === '复制') {
+          data = {
+            ...modalFormData,
+            ...data,
+            oid: '',
+          }
+        }
         setConfirmLoading(true)
         const res: any = await getTemplatepage({pageSize: 2, current: 1}, {valueSense: data.valueSense, address: data.address})  
         const temp: TemplateItem = res.result.records.find((ele: TemplateItem) => ele.valueSense === data.valueSense && ele.eaProjectsOid === data.eaProjectsOid)
-        if (temp && modalTitle === '新增') {
+        if (temp && (modalTitle === '新增' || modalTitle === '复制')) {
           modalForm.setFields([
             {
               errors: ['存在重名'],
@@ -344,10 +385,7 @@ const TemplatePage: React.FC = () => {
             <Button onClick={handleModalOK} type="primary" style={{marginLeft: 10}} loading={confirmLoading}>确认</Button>
           </div>
         }
-        // onCancel={handleModalCancel}
-        // onOk={handleModalOK}
-        // afterClose={modalClose}
-        // confirmLoading={confirmLoading}
+        onClose={handleModalCancel}
       >
         <Form form={modalForm}>
             <Row>
@@ -397,25 +435,28 @@ const TemplatePage: React.FC = () => {
                 </Form.Item>
               </Col>
             </Row>
-            <Form.Item 
-              label="省份" 
-              name="address"
-            >
-              <Select allowClear>
-                {
-                  province.map(((ele: string, index: number) => {
-                    return (
-                      <Select.Option
-                        value={index}
-                        key={index}
-                      >
-                        {ele}
-                      </Select.Option>
-                    )
-                  }))
-                }
-              </Select>
-            </Form.Item>
+            {
+              isCapital ? <Form.Item 
+                label="省份" 
+                name="address"
+              >
+                <Select allowClear>
+                  {
+                    province.map(((ele: string, index: number) => {
+                      return (
+                        <Select.Option
+                          value={index}
+                          key={index}
+                        >
+                          {ele}
+                        </Select.Option>
+                      )
+                    }))
+                  }
+                </Select>
+              </Form.Item>:null
+            }
+            
             <Form.Item
               label="工作阶段"
               name="phase"
@@ -457,12 +498,17 @@ const TemplatePage: React.FC = () => {
             >
               <Input/>
             </Form.Item>
-            <Form.Item label="最大值" name="maxValue">
-              <Input/>
-            </Form.Item>
-            <Form.Item label="最小值" name="minValue">
-              <Input/>
-            </Form.Item>
+            {
+              isCapital ?
+              <React.Fragment>
+                <Form.Item label="最大值" name="maxValue">
+                  <Input/>
+                </Form.Item>
+                <Form.Item label="最小值" name="minValue">
+                  <Input/>
+                </Form.Item>
+              </React.Fragment>:null
+            }
             <Form.Item label="默认值" name="valueDemo">
               <Input/>
             </Form.Item>
