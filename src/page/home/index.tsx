@@ -293,13 +293,31 @@ const Home: React.FC<any> = () => {
       })
     }
   }
+  const getLocalVar = (str: string): string[] => {
+    const t1 = str.split(';')
+    const res = []
+    const reg = /\w+(?==)/
+    for (let i = 0; i < t1.length; i++) {
+      const ele = t1[i]
+      const d = reg.exec(ele)
+      if (d) {
+        res.push(d[0])
+      }
+    }
+    return Array.from(new Set(res))
+  }
   const eidtCalcSubmit = (text: string, html: string): void => {
+    const calculateExp = `{${text.replace('(', '_').replace(')', '').replace(',', '_').replace(/[\r\n]/g, '')}}`
+    const localVar = `,${getLocalVar(text).join()},`
     calcFuncSubmit({
       ...editData,
-      calculateExp: text,
-      htmlText: html
+      calculateExp,
+      htmlText: html,
+      displayExp:text,
+      localVar,
     })
   }
+
   return (
     <div className="home">
       <Form layout="inline" form={form}>

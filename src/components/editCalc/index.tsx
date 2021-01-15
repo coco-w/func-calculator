@@ -231,7 +231,7 @@ const EditCalc = forwardRef((props: any, ref: any) => {
           if (data.htmlText) {
             r = BraftEditor.createEditorState(data.htmlText)
           }else {
-            r = BraftEditor.createEditorState(data.calculateExp)
+            r = BraftEditor.createEditorState(data.displayExp)
           }
           setTimeout(() => {
             transtionPreview(r)
@@ -349,6 +349,13 @@ const EditCalc = forwardRef((props: any, ref: any) => {
         onCancel={handleCancel}
         width="100%"
       >
+        {
+          props.data?.expDesc ?
+          <div style={{
+            lineHeight: "30px",
+            fontSize: "18px",
+          }}>{props.data?.expDesc}</div>:null
+        }
         <Row gutter={12}>
           <Col span={12}>
             <div className="editor">
@@ -371,6 +378,7 @@ const EditCalc = forwardRef((props: any, ref: any) => {
             </div>
           </Col>
         </Row>
+        
         <Row gutter={12}>
           <Col span={8}>
             <div className="base">
